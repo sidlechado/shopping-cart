@@ -3,7 +3,7 @@
 		"TS_NODE_FILES": true,
 		"TZ": "UTC"
 	},
-	"exec": "node -r ts-node/register -r tsconfig-paths/register --inspect src/index.ts",
+	"exec": "node -r ts-node/register --inspect src/index.ts",
 	"ext": "json,ts",
 	"ignore": [
 		"src/**/*.spec.ts",

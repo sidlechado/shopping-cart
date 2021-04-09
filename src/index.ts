@@ -1,24 +1,28 @@
 import 'reflect-metadata';
-import express, { Request, Response, NextFunction } from 'express';
+import 'module-alias/register';
+import cors from 'cors';
+import express from 'express';
+import mongoose from 'mongoose';
+import api from './routes';
 
-import AppError from './errors/AppError';
+mongoose.connect(
+	// 'mongodb+srv://sid:sidmongodb@cluster0-iftuw.mongodb.net/test?retryWrites=true&w=majority',
+	'mongodb://mongo:123456@localhost:27017/shopping-cart?authSource=admin',
+	{
+		useNewUrlParser: true,
+		useUnifiedTopology: true,
+		useFindAndModify: false,
+	},
+);
 
 const app = express();
 
 app.use(express.json());
+app.use(cors());
+app.use('/api', api());
 
-app.use((err: Error, request: Request, response: Response, _: NextFunction) => {
-	if (err instanceof AppError) {
-		return response.status(err.statusCode).json({
-			status: 'error',
-			message: err.message,
-		});
-	}
-
-	return response.status(500).json({
-		status: 'error',
-		message: 'Internal server error',
-	});
+app.get('/', (req, res) => {
+	res.send('hello world');
 });
 
 app.listen(3333, () => {

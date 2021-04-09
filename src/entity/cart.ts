@@ -1,6 +1,6 @@
-import { Schema } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
-const cartSchema = new Schema({
+export default model('Cart', new Schema({
 	_id: Number,
 	order: {
 		products: [{
@@ -15,6 +15,4 @@ const cartSchema = new Schema({
 	totalValue: Number,
 }, {
 	timestamps: true,
-});
-
-export default cartSchema;
+}));

@@ -1,11 +1,10 @@
 import { Router } from 'express';
-
-import user from './user';
+import { createUser } from './createUser';
 
 export default function (): Router {
 	const router = Router();
 
-	router.use('/user', user());
+	router.get('/create', createUser);
 
 	return router;
 }

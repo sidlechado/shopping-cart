@@ -1,11 +1,9 @@
-import { Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 
-const storeSchema = new Schema({
+export default model('Store', new Schema({
 	_id: Number,
 	name: String,
 	description: String,
 }, {
 	timestamps: true,
-});
-
-export default storeSchema;
+}));

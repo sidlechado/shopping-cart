@@ -57,6 +57,8 @@ module.exports = {
 		// This will allow module-alias usage
 		'import/no-unresolved': 'off',
 
+		'import/prefer-default-export': 'off',
+
 		// Set the lines' max length to 120
 		'max-len': ['error', { code: 120 }],
 

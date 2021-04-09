@@ -1,10 +1,19 @@
-import { Schema } from 'mongoose';
+import { model, Schema } from 'mongoose';
 
-const userSchema = new Schema({
-	_id: Number,
-	name: String,
+export default model('User', new Schema({
+	_id: {
+		type: Schema.Types.ObjectId,
+		required: true,
+		auto: true,
+	},
+	name: {
+		type: String,
+		required: true,
+	},
+	cpf: {
+		type: String,
+		required: true,
+	},
 }, {
 	timestamps: true,
-});
-
-export default userSchema;
+}));
