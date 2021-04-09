@@ -49,6 +49,8 @@ module.exports = {
 			ignores: ['modules'],
 		}],
 
+		'no-console': 'off',
+
 		// This will allow TS files imports
 		'node/no-missing-import': 'off',
 
@@ -57,9 +59,6 @@ module.exports = {
 
 		// Set the lines' max length to 120
 		'max-len': ['error', { code: 120 }],
-
-		// Forbid the 'console' usage
-		'no-console': 'error',
 
 		// Do not error when there is no space for //#region and //#endregion (foldable area markers)
 		'spaced-comment': ['error', 'always', {
