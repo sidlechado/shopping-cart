@@ -72,6 +72,11 @@ module.exports = {
 		// Disable the need of using parentheses around an arrow function's body
 		'implicit-arrow-linebreak': 'off',
 
+		'import/no-cycle': 'off',
+
+		'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'off',
+
 		'import/extensions': ['error', 'ignorePackages',
 			{
 				js: 'never',

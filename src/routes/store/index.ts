@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import {
-	createUser,
-	listUsers,
+	createStore,
+	listProductsInAStore,
 } from './useCases';
 
 export default function (): Router {
 	const router = Router();
 
-	router.post('/create', createUser);
-	router.get('/list', listUsers);
+	router.post('/create', createStore);
+	router.get('/list/:id', listProductsInAStore);
 
 	return router;
 }
