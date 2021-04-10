@@ -1,12 +1,26 @@
-import { model, Schema } from 'mongoose';
+import {
+	Entity, PrimaryGeneratedColumn, Column, ManyToOne,
+} from 'typeorm';
+import Store from './Store';
 
-export default model('Product', new Schema({
-	_id: Number,
-	name: String,
-	description: String,
-	isCouponAppliable: Boolean,
-	value: Number,
-	stockQty: Number,
-}, {
-	timestamps: true,
-}));
+// Will be used as our stock
+@Entity()
+export default class Product {
+	@PrimaryGeneratedColumn()
+	id: number;
+
+	@Column()
+	name: string;
+
+	@Column()
+	price: number;
+
+	@Column()
+	stockQuantity: number;
+
+	@Column()
+	isCouponAppliable: boolean;
+
+	@ManyToOne((type) => Store, (store) => store.products)
+	store: Store;
+}

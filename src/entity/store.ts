@@ -1,9 +1,16 @@
-import { model, Schema } from 'mongoose';
+import {
+	Entity, PrimaryGeneratedColumn, Column, OneToMany,
+} from 'typeorm';
+import Product from './Product';
 
-export default model('Store', new Schema({
-	_id: Number,
-	name: String,
-	description: String,
-}, {
-	timestamps: true,
-}));
+@Entity()
+export default class Store {
+	@PrimaryGeneratedColumn()
+	id: number;
+
+	@Column()
+	name: string;
+
+	@OneToMany((type) => Product, (product) => product.store)
+	products: Product[];
+}
