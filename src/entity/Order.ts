@@ -42,12 +42,8 @@ export default class Order {
 	products: Array<OrderableItem>;
 
 	@Column({
-		default: false,
-	})
-	isCouponApplied: boolean;
-
-	@Column({
 		default: 0,
+		type: 'float',
 	})
 	couponValue: number;
 

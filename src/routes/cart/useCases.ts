@@ -5,6 +5,7 @@ import Store from '../../entity/Store';
 import User from '../../entity/User';
 import Order from '../../entity/Order';
 import AppError from '../../errors/AppError';
+import Coupon from '../../entity/Coupon';
 
 function checkIfOrderHasProduct(order: Order, productId: number): number {
 	return order.products.findIndex((element) => element.product.id === productId);
@@ -39,7 +40,10 @@ async function calculatePrice(order: Order): Promise<Order> {
 
 	try {
 		order.products.forEach((priceCalculator): void => {
-			priceCalculator.subtotal = priceCalculator.qty * priceCalculator.product.price;
+			const productPrice = priceCalculator.product.price;
+			priceCalculator.subtotal = (
+				priceCalculator.qty * (productPrice - productPrice * order.couponValue)
+			);
 		});
 
 		order.totalPrice = order.products.reduce((totalPrice, { subtotal }: {
@@ -178,7 +182,7 @@ export async function removeItemFromOrder(req: Request, res: Response, next: Nex
 		});
 
 		if (!order) {
-			throw new AppError('Invalid data.');
+			throw new AppError('Order does not exists.');
 		}
 
 		if (order.user.id !== userId) {
@@ -248,6 +252,56 @@ export async function clearOrderProducts(req: Request, res: Response, next: Next
 
 		order.products.splice(0, order.products.length);
 
+		order = await calculatePrice(order);
+
+		res.status(200).json(order);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function applyCouponToOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const orderRepository = getRepository(Order);
+	const couponRepository = getRepository(Coupon);
+
+	try {
+		const {
+			tag,
+			orderId,
+			userId,
+		} = req.body;
+
+		let order = await orderRepository.findOne({
+			relations: ['store', 'user'],
+			where: {
+				id: orderId,
+			},
+		});
+
+		console.log();
+
+		if (!order) {
+			throw new AppError('Order does not exists');
+		}
+
+		if (order.user.id !== userId) {
+			throw new AppError('User does not own this order.');
+		}
+
+		const coupon = await couponRepository.findOne({
+			where: {
+				tag,
+				store: {
+					id: order.store.id,
+				},
+			},
+		});
+
+		if (!coupon) {
+			throw new AppError('Invalid data.');
+		}
+
+		order.couponValue = coupon.value;
 		order = await calculatePrice(order);
 
 		res.status(200).json(order);
