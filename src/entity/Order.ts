@@ -5,7 +5,7 @@ import User from './User';
 import Store from './Store';
 import Product from './Product';
 
-interface OrderableItem {
+export interface OrderableItem {
 	product: Product;
 	qty: number;
 	subtotal: number;

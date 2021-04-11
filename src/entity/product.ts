@@ -15,10 +15,14 @@ export default class Product {
 	@Column()
 	price: number;
 
-	@Column()
+	@Column({
+		default: 0,
+	})
 	stockQuantity: number;
 
-	@Column()
+	@Column({
+		default: false,
+	})
 	isCouponAppliable: boolean;
 
 	@ManyToOne((type) => Store, (store) => store.products)

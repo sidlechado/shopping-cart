@@ -3,8 +3,16 @@ import { getRepository } from 'typeorm';
 import Product from '../../entity/Product';
 import Store from '../../entity/Store';
 import User from '../../entity/User';
-import Order from '../../entity/Order';
+import Order, { OrderableItem } from '../../entity/Order';
 import AppError from '../../errors/AppError';
+
+function checkIfOrderHasProduct(order: Order, productId: number): number {
+	return order.products.findIndex((element) => element.product.id === productId);
+}
+
+function stockChecker(qty: number, orderQty: number, stock: number): boolean {
+	return ((qty + orderQty) > stock);
+}
 
 async function checkIfUserHasOrder(id: number): Promise<Order> {
 	const orderRepository = getRepository(Order);
@@ -26,10 +34,14 @@ async function checkIfUserHasOrder(id: number): Promise<Order> {
 	}
 }
 
-async function calculateTotalPrice(order: Order): Promise<Order> {
+async function calculatePrice(order: Order): Promise<Order> {
 	const orderRepository = getRepository(Order);
 
 	try {
+		order.products.forEach((priceCalculator): void => {
+			priceCalculator.subtotal = priceCalculator.qty * priceCalculator.product.price;
+		});
+
 		order.totalPrice = order.products.reduce((totalPrice, { subtotal }: {
 			subtotal: number;
 		}) => totalPrice + subtotal, 0);
@@ -72,7 +84,6 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
 		}
 
 		let order = await checkIfUserHasOrder(userId);
-		console.log(order);
 
 		if (!order) {
 			order = orderRepository.create({
@@ -89,7 +100,7 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
 	}
 }
 
-export async function insertProductIntoOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateProductsOnOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
 	const orderRepository = getRepository(Order);
 	const productRepository = getRepository(Product);
 
@@ -122,17 +133,88 @@ export async function insertProductIntoOrder(req: Request, res: Response, next: 
 			throw new AppError('User does not own this order.');
 		}
 
-		if (qty > product.stockQuantity) {
-			throw new AppError('Stock insufficient.');
+		const productIndex = checkIfOrderHasProduct(order, product.id);
+		if (productIndex >= 0) {
+			if (stockChecker(qty, order.products[productIndex].qty, product.stockQuantity)) {
+				throw new AppError('Stock insufficient.');
+			}
+
+			if (!(qty + order.products[productIndex].qty >= 0)) {
+				throw new AppError('Invalid data');
+			}
+
+			order.products[productIndex].qty += qty;
+		} else {
+			order.products.push({
+				product,
+				qty,
+				subtotal: (qty * product.price),
+			});
 		}
 
-		order.products.push({
-			product,
-			qty,
-			subtotal: (qty * product.price),
+		order = await calculatePrice(order);
+
+		res.status(200).json(order);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function removeItemFromOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const orderRepository = getRepository(Order);
+
+	try {
+		const {
+			userId,
+			productId,
+			orderId,
+		} = req.body;
+
+		let order = await orderRepository.findOne({
+			relations: ['user', 'store'],
+			where: {
+				id: orderId,
+			},
 		});
 
-		order = await calculateTotalPrice(order);
+		if (!order) {
+			throw new AppError('Invalid data.');
+		}
+
+		if (order.user.id !== userId) {
+			throw new AppError('User does not own this order.');
+		}
+
+		const productIndex = checkIfOrderHasProduct(order, productId);
+		if (productIndex >= 0) {
+			order.products.splice(productIndex, 1);
+			order = await calculatePrice(order);
+		} else {
+			throw new AppError('Order does not have this product');
+		}
+
+		res.status(200).json(order);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const orderRepository = getRepository(Order);
+
+	try {
+		const { id } = req.params;
+
+		const order = await orderRepository.findOne({
+			relations: ['user', 'store'],
+			where: {
+				id,
+			},
+		});
+
+		if (!order) {
+			throw new AppError('Order does not exists');
+		}
 
 		res.status(200).json(order);
 	} catch (err) {
