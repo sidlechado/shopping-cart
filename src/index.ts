@@ -8,7 +8,7 @@ import AppError from './errors/AppError';
 
 createConnection().then(async () => {
 	console.log('Connected to Postgres DB...');
-}).catch((error) => console.log(error));
+}).catch((error) => console.error(error));
 
 const app = express();
 

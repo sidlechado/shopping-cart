@@ -3,9 +3,10 @@ import {
 } from 'typeorm';
 import User from './User';
 import Store from './Store';
+import Product from './Product';
 
 interface OrderableItem {
-	product_id: number;
+	product: Product;
 	qty: number;
 	subtotal: number;
 }

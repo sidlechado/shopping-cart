@@ -1,12 +1,14 @@
 import { Router } from 'express';
 import {
-	createProduct,
+	createOrder,
+	insertProductIntoOrder,
 } from './useCases';
 
 export default function (): Router {
 	const router = Router();
 
-	router.post('/create', createProduct);
+	router.post('/create', createOrder);
+	router.post('/insert', insertProductIntoOrder);
 
 	return router;
 }
