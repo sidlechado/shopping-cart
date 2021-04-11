@@ -154,7 +154,7 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 		}
 
 		if(order.status !== orderStatus.active){
-			throw new AppError('Order already has already been completed or canceled');
+			throw new AppError('Order already has already been completed or canceled.');
 		}
 
 		const productIndex = checkIfOrderHasProduct(order, productId);
@@ -164,7 +164,7 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 			}
 
 			if (qty < 0) {
-				throw new AppError('Invalid data');
+				throw new AppError('Invalid data.');
 			}
 
 			order.products[productIndex].qty = qty;

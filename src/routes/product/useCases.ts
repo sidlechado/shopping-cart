@@ -73,7 +73,7 @@ export async function updateStock(req: Request, res: Response, next: NextFunctio
 			}
 		});
 
-		if (!product) {
+		if (!product || stockQuantity < 0) {
 			throw new AppError('Invalid data.');
 		}
 
