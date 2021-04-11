@@ -6,6 +6,7 @@ import {
 	getOrder,
 	clearOrderProducts,
 	applyCouponToOrder,
+	persistOrder,
 } from './useCases';
 
 export default function (): Router {
@@ -16,6 +17,7 @@ export default function (): Router {
 	router.post('/update', updateProductsOnOrder);
 	router.post('/remove', removeItemFromOrder);
 	router.post('/coupon', applyCouponToOrder);
+	router.post('/persist', persistOrder);
 	router.delete('/clear', clearOrderProducts);
 
 	return router;

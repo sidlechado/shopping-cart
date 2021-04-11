@@ -3,9 +3,9 @@ import { getRepository } from 'typeorm';
 import Product from '../../entity/Product';
 import Store from '../../entity/Store';
 import User from '../../entity/User';
-import Order from '../../entity/Order';
-import AppError from '../../errors/AppError';
+import Order, { orderStatus } from '../../entity/Order';
 import Coupon from '../../entity/Coupon';
+import AppError from '../../errors/AppError';
 
 function checkIfOrderHasProduct(order: Order, productId: number): number {
 	return order.products.findIndex((element) => element.product.id === productId);
@@ -15,7 +15,7 @@ function stockChecker(qty: number, orderQty: number, stock: number): boolean {
 	return ((qty + orderQty) > stock);
 }
 
-async function checkIfUserHasOrder(id: number): Promise<Order> {
+async function checkIfUserHasOrder(userId: number, storeId: number): Promise<Order> {
 	const orderRepository = getRepository(Order);
 
 	try {
@@ -23,7 +23,10 @@ async function checkIfUserHasOrder(id: number): Promise<Order> {
 			relations: ['user', 'store'],
 			where: {
 				user: {
-					id,
+					userId,
+					store: {
+						id: storeId,
+					}
 				},
 				status: 'active',
 			},
@@ -87,7 +90,7 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
 			throw new AppError('Invalid data.');
 		}
 
-		let order = await checkIfUserHasOrder(userId);
+		let order = await checkIfUserHasOrder(userId, storeId);
 
 		if (!order) {
 			order = orderRepository.create({
@@ -113,6 +116,7 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 			orderId,
 			productId,
 			userId,
+			storeId,
 			qty,
 		} = req.body;
 
@@ -120,12 +124,22 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 			relations: ['user', 'store'],
 			where: {
 				id: orderId,
+				user: {
+					id: userId,
+				},
+				store: {
+					id: storeId,
+				},
+				status: 'active',
 			},
 		});
 
 		const product = await productRepository.findOne({
 			where: {
 				id: productId,
+				store: {
+					id: storeId,
+				}
 			},
 		});
 
@@ -135,6 +149,10 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 
 		if (order.user.id !== userId) {
 			throw new AppError('User does not own this order.');
+		}
+
+		if(order.status !== orderStatus.active){
+			throw new AppError('Order already has already been completed or canceled');
 		}
 
 		const productIndex = checkIfOrderHasProduct(order, product.id);
@@ -189,6 +207,10 @@ export async function removeItemFromOrder(req: Request, res: Response, next: Nex
 			throw new AppError('User does not own this order.');
 		}
 
+		if(order.status !== orderStatus.active){
+			throw new AppError('Order already has already been completed or canceled');
+		}
+
 		const productIndex = checkIfOrderHasProduct(order, productId);
 		if (productIndex >= 0) {
 			order.products.splice(productIndex, 1);
@@ -217,7 +239,7 @@ export async function getOrder(req: Request, res: Response, next: NextFunction):
 		});
 
 		if (!order) {
-			throw new AppError('Order does not exists');
+			throw new AppError('Order does not exists.');
 		}
 
 		res.status(200).json(order);
@@ -288,6 +310,10 @@ export async function applyCouponToOrder(req: Request, res: Response, next: Next
 			throw new AppError('User does not own this order.');
 		}
 
+		if(order.status !== orderStatus.active){
+			throw new AppError('Order already has already been completed or canceled');
+		}
+
 		const coupon = await couponRepository.findOne({
 			where: {
 				tag,
@@ -303,6 +329,62 @@ export async function applyCouponToOrder(req: Request, res: Response, next: Next
 
 		order.couponValue = coupon.value;
 		order = await calculatePrice(order);
+
+		res.status(200).json(order);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function persistOrder(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const orderRepository = getRepository(Order);
+	const productRepository = getRepository(Product);
+
+	try {
+		const {
+			orderId,
+			userId,
+		} = req.body;
+
+		const order = await orderRepository.findOne({
+			relations: ['store', 'user'],
+			where: {
+				id: orderId,
+				user: {
+					id: userId,
+				},
+			},
+		});
+
+		if (!order) {
+			throw new AppError('Invalid data.');
+		}
+
+		if (order.user.id !== userId) {
+			throw new AppError('User does not own this order.');
+		}
+
+		if(order.status !== orderStatus.active){
+			throw new AppError('Order already has already been completed or canceled');
+		}
+
+		let shouldPersist = true;
+		order.products.forEach(product => {
+			if(product.qty > product.product.stockQuantity){
+				shouldPersist = false;
+			}
+		});
+
+		console.log(shouldPersist)
+		if(shouldPersist){
+			order.products.forEach(async product => {
+				product.product.stockQuantity -= product.qty;
+				await productRepository.save(product.product)
+			});
+
+			order.status = orderStatus.completed;
+			await orderRepository.save(order);
+		}
 
 		res.status(200).json(order);
 	} catch (err) {

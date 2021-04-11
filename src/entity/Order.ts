@@ -11,7 +11,7 @@ export interface OrderableItem {
 	subtotal: number;
 }
 
-enum orderStatus {
+export enum orderStatus {
 	active = 'active',
 	completed = 'completed',
 	canceled = 'canceled'
