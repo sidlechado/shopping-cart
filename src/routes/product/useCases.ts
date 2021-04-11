@@ -13,7 +13,6 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
 			name,
 			price,
 			stockQuantity,
-			isCouponAppliable,
 			storeId,
 		} = req.body;
 
@@ -27,17 +26,65 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
 			throw new AppError('Store not found.');
 		}
 
-		const user = productRepository.create({
+		const product = productRepository.create({
 			name,
 			price,
 			stockQuantity,
-			isCouponAppliable,
 			store,
 		});
 
-		await productRepository.save(user);
+		await productRepository.save(product);
 
-		res.status(200).json(user);
+		res.status(200).json(product);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function updateStock(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const productRepository = getRepository(Product);
+	const storeRepository = getRepository(Store);
+
+	try {
+		const {
+			productId,
+			storeId,
+			stockQuantity,
+			price,
+			name,
+		} = req.body;
+
+		const store = await storeRepository.findOne({
+			where: {
+				id: storeId,
+			},
+		});
+
+		if (!store) {
+			throw new AppError('Store not found.');
+		}
+
+		const product = await productRepository.findOne({
+			where:{
+				id: productId,
+				store: {
+					id: storeId,
+				}
+			}
+		});
+
+		if (!product) {
+			throw new AppError('Invalid data.');
+		}
+
+		product.stockQuantity = stockQuantity;
+		product.price = price;
+		product.name = name;
+
+		await productRepository.save(product);
+		await storeRepository.save(store);
+
+		res.status(200).json(product);
 	} catch (err) {
 		next(err);
 	}

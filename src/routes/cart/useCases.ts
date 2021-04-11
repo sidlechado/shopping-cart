@@ -8,11 +8,11 @@ import Coupon from '../../entity/Coupon';
 import AppError from '../../errors/AppError';
 
 function checkIfOrderHasProduct(order: Order, productId: number): number {
-	return order.products.findIndex((element) => element.product.id === productId);
+	return order.products.findIndex((element) => element.productId === productId);
 }
 
-function stockChecker(qty: number, orderQty: number, stock: number): boolean {
-	return ((qty + orderQty) > stock);
+function stockChecker(qty: number, stock: number): boolean {
+	return (qty > stock);
 }
 
 async function checkIfUserHasOrder(userId: number, storeId: number): Promise<Order> {
@@ -39,25 +39,27 @@ async function checkIfUserHasOrder(userId: number, storeId: number): Promise<Ord
 }
 
 async function calculatePrice(order: Order): Promise<Order> {
+	const productRepository = getRepository(Product);
 	const orderRepository = getRepository(Order);
 
 	try {
-		order.products.forEach((priceCalculator): void => {
-			const productPrice = priceCalculator.product.price;
+		order.totalPrice = 0;
+		order.products.forEach(async (priceCalculator): Promise<void> => {
+			const product = await productRepository.findOne({
+				where:{
+					id: priceCalculator.productId
+				}
+			});
+			const productPrice = product.price;
 			priceCalculator.subtotal = (
 				priceCalculator.qty * (productPrice - productPrice * order.couponValue)
 			);
+			order.totalPrice += priceCalculator.subtotal;
 		});
 
-		order.totalPrice = order.products.reduce((totalPrice, { subtotal }: {
-			subtotal: number;
-		}) => totalPrice + subtotal, 0);
+		await orderRepository.save(order);
 
-		const updatedOrder = await orderRepository.save({
-			...order,
-		});
-
-		return updatedOrder;
+		return order;
 	} catch (err) {
 		console.error(err);
 	}
@@ -155,22 +157,23 @@ export async function updateProductsOnOrder(req: Request, res: Response, next: N
 			throw new AppError('Order already has already been completed or canceled');
 		}
 
-		const productIndex = checkIfOrderHasProduct(order, product.id);
+		const productIndex = checkIfOrderHasProduct(order, productId);
 		if (productIndex >= 0) {
-			if (stockChecker(qty, order.products[productIndex].qty, product.stockQuantity)) {
+			if (stockChecker(qty, product.stockQuantity)) {
 				throw new AppError('Stock insufficient.');
 			}
 
-			if (!(qty + order.products[productIndex].qty >= 0)) {
+			if (qty < 0) {
 				throw new AppError('Invalid data');
 			}
 
-			order.products[productIndex].qty += qty;
+			order.products[productIndex].qty = qty;
 		} else {
 			order.products.push({
-				product,
+				productId,
 				qty,
 				subtotal: (qty * product.price),
+				persistable: true,
 			});
 		}
 
@@ -368,23 +371,39 @@ export async function persistOrder(req: Request, res: Response, next: NextFuncti
 			throw new AppError('Order already has already been completed or canceled');
 		}
 
-		let shouldPersist = true;
-		order.products.forEach(product => {
-			if(product.qty > product.product.stockQuantity){
-				shouldPersist = false;
-			}
-		});
 
-		console.log(shouldPersist)
-		if(shouldPersist){
-			order.products.forEach(async product => {
-				product.product.stockQuantity -= product.qty;
-				await productRepository.save(product.product)
-			});
+		order.products.forEach(async (element) => {
+			const product = await productRepository.findOne({
+				where: {
+					id: element.productId
+				}
+			})
 
-			order.status = orderStatus.completed;
-			await orderRepository.save(order);
+			element.persistable = element.qty > product.stockQuantity ? false : true;
+		})
+
+		const hasFalsePersist = order.products.find((element) =>
+			element.persistable === false
+		);
+
+		console.log(hasFalsePersist);
+		if(!!hasFalsePersist) {
+			throw new AppError('Stock insufficient.')
 		}
+
+		order.products.forEach(async (element) => {
+			const product = await productRepository.findOne({
+				where: {
+					id: element.productId
+				}
+			})
+
+			product.stockQuantity = product.stockQuantity - element.qty;
+			await productRepository.save(product);
+		})
+
+		order.status = orderStatus.completed;
+		await orderRepository.save(order);
 
 		res.status(200).json(order);
 	} catch (err) {

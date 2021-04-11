@@ -3,12 +3,12 @@ import {
 } from 'typeorm';
 import User from './User';
 import Store from './Store';
-import Product from './Product';
 
 export interface OrderableItem {
-	product: Product;
+	productId: number;
 	qty: number;
 	subtotal: number;
+	persistable: boolean;
 }
 
 export enum orderStatus {

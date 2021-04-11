@@ -20,11 +20,6 @@ export default class Product {
 	})
 	stockQuantity: number;
 
-	@Column({
-		default: true,
-	})
-	isCouponAppliable: boolean;
-
 	@ManyToOne((type) => Store, (store) => store.products)
 	store: Store;
 }
