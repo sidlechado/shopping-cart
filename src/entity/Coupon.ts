@@ -1,4 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+	Entity, PrimaryGeneratedColumn, Column, ManyToOne,
+} from 'typeorm';
+import Store from './Store';
 
 @Entity()
 export default class Coupon {
@@ -8,6 +11,11 @@ export default class Coupon {
 	@Column()
 	tag: string;
 
-	@Column()
+	@Column({
+		type: 'float',
+	})
 	value: number;
+
+	@ManyToOne((type) => Store, (store) => store.coupons)
+	store: Store;
 }

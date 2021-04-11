@@ -21,7 +21,7 @@ export default class Product {
 	stockQuantity: number;
 
 	@Column({
-		default: false,
+		default: true,
 	})
 	isCouponAppliable: boolean;
 

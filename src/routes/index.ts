@@ -4,14 +4,16 @@ import user from './user';
 import store from './store';
 import product from './product';
 import cart from './cart';
+import coupon from './coupon';
 
 export default function (): Router {
 	const router = Router();
 
-	router.use('/user', user());
+	router.use('/cart', cart());
+	router.use('/coupon', coupon());
 	router.use('/store', store());
 	router.use('/product', product());
-	router.use('/cart', cart());
+	router.use('/user', user());
 
 	return router;
 }

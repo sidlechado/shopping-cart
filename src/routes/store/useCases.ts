@@ -22,21 +22,20 @@ export async function createStore(req: Request, res: Response, next: NextFunctio
 	}
 }
 
-export async function listProductsInAStore(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function getStore(req: Request, res: Response, next: NextFunction): Promise<void> {
 	const storeRepository = getRepository(Store);
 
 	try {
 		const { id } = req.params;
 
 		const store = await storeRepository.findOne({
-			relations: ['products'],
+			relations: ['products', 'coupons', 'orders'],
 			where: {
 				id,
 			},
 		});
 
-		console.log(store);
-		res.status(200).json(store.products);
+		res.status(200).json(store);
 	} catch (err) {
 		next(err);
 	}

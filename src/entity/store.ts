@@ -3,6 +3,7 @@ import {
 } from 'typeorm';
 import Product from './Product';
 import Order from './Order';
+import Coupon from './Coupon';
 
 @Entity()
 export default class Store {
@@ -16,5 +17,8 @@ export default class Store {
 	products: Product[];
 
 	@OneToMany((type) => Order, (order) => order.store)
-	orders: Product[];
+	orders: Order[];
+
+	@OneToMany((type) => Coupon, (coupon) => coupon.store)
+	coupons: Coupon[];
 }
