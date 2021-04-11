@@ -303,8 +303,6 @@ export async function applyCouponToOrder(req: Request, res: Response, next: Next
 			},
 		});
 
-		console.log();
-
 		if (!order) {
 			throw new AppError('Order does not exists');
 		}
@@ -386,7 +384,6 @@ export async function persistOrder(req: Request, res: Response, next: NextFuncti
 			element.persistable === false
 		);
 
-		console.log(hasFalsePersist);
 		if(!!hasFalsePersist) {
 			throw new AppError('Stock insufficient.')
 		}
