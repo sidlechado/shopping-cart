@@ -3,7 +3,7 @@ import { getRepository } from 'typeorm';
 import Product from '../../entity/Product';
 import Store from '../../entity/Store';
 import User from '../../entity/User';
-import Order, { OrderableItem } from '../../entity/Order';
+import Order from '../../entity/Order';
 import AppError from '../../errors/AppError';
 
 function checkIfOrderHasProduct(order: Order, productId: number): number {
@@ -215,6 +215,40 @@ export async function getOrder(req: Request, res: Response, next: NextFunction):
 		if (!order) {
 			throw new AppError('Order does not exists');
 		}
+
+		res.status(200).json(order);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function clearOrderProducts(req: Request, res: Response, next: NextFunction): Promise<void> {
+	const orderRepository = getRepository(Order);
+
+	try {
+		const {
+			userId,
+			orderId,
+		} = req.body;
+
+		let order = await orderRepository.findOne({
+			relations: ['user', 'store'],
+			where: {
+				id: orderId,
+			},
+		});
+
+		if (!order) {
+			throw new AppError('Order does not exists');
+		}
+
+		if (order.user.id !== userId) {
+			throw new AppError('User does not own this order.');
+		}
+
+		order.products.splice(0, order.products.length);
+
+		order = await calculatePrice(order);
 
 		res.status(200).json(order);
 	} catch (err) {

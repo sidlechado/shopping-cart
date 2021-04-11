@@ -76,6 +76,7 @@ module.exports = {
 
 		'consistent-return': 'off',
 
+		'no-param-reassign': 'off',
 		'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
 
