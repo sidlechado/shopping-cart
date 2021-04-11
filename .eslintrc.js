@@ -74,6 +74,8 @@ module.exports = {
 
 		'import/no-cycle': 'off',
 
+		'consistent-return': 'off',
+
 		'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'off',
 

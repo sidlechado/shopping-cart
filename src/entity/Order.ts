@@ -1,4 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+	Entity, PrimaryGeneratedColumn, Column, ManyToOne,
+} from 'typeorm';
+import User from './User';
+import Store from './Store';
 
 interface OrderableItem {
 	product_id: number;
@@ -6,15 +10,26 @@ interface OrderableItem {
 	subtotal: number;
 }
 
+enum orderStatus {
+	active = 'active',
+	completed = 'completed',
+	canceled = 'canceled'
+}
+
 @Entity()
 export default class Order {
 	@PrimaryGeneratedColumn()
 	id: number;
 
-	@Column()
-	user_id: string;
+	@ManyToOne((type) => User, (user) => user.orders)
+	user: User;
 
-	@Column()
+	@ManyToOne((type) => Store, (store) => store.orders)
+	store: Store;
+
+	@Column({
+		default: 0,
+	})
 	totalPrice: number;
 
 	@Column({
@@ -25,9 +40,20 @@ export default class Order {
 	})
 	products: Array<OrderableItem>;
 
-	@Column()
+	@Column({
+		default: false,
+	})
 	isCouponApplied: boolean;
 
-	@Column()
+	@Column({
+		default: 0,
+	})
 	couponValue: number;
+
+	@Column({
+		type: 'enum',
+		enum: orderStatus,
+		default: orderStatus.active,
+	})
+	status: orderStatus;
 }

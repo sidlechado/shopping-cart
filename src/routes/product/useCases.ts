@@ -42,20 +42,3 @@ export async function createProduct(req: Request, res: Response, next: NextFunct
 		next(err);
 	}
 }
-
-export async function listProductInAStore(req: Request, res: Response, next: NextFunction): Promise<void> {
-	const productRepository = getRepository(Product);
-
-	try {
-		const { id } = req.query;
-		const products = await productRepository.find({
-			where: {
-				stockQuantity: '',
-			},
-		});
-
-		res.status(200).json(products);
-	} catch (err) {
-		next(err);
-	}
-}

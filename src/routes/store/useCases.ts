@@ -26,13 +26,16 @@ export async function listProductsInAStore(req: Request, res: Response, next: Ne
 	const storeRepository = getRepository(Store);
 
 	try {
-		const { id } = req.query;
+		const { id } = req.params;
+
 		const store = await storeRepository.findOne({
+			relations: ['products'],
 			where: {
 				id,
 			},
 		});
 
+		console.log(store);
 		res.status(200).json(store.products);
 	} catch (err) {
 		next(err);

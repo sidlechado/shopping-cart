@@ -2,6 +2,7 @@ import {
 	Entity, PrimaryGeneratedColumn, Column, OneToMany,
 } from 'typeorm';
 import Product from './Product';
+import Order from './Order';
 
 @Entity()
 export default class Store {
@@ -13,4 +14,7 @@ export default class Store {
 
 	@OneToMany((type) => Product, (product) => product.store)
 	products: Product[];
+
+	@OneToMany((type) => Order, (order) => order.store)
+	orders: Product[];
 }

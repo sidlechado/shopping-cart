@@ -1,5 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
-
+import {
+	Entity, PrimaryGeneratedColumn, Column, OneToMany,
+} from 'typeorm';
+import Order from './Order';
 @Entity()
 export default class User {
 	@PrimaryGeneratedColumn()
@@ -10,4 +12,7 @@ export default class User {
 
 	@Column()
 	cpf: string;
+
+	@OneToMany((type) => Order, (order) => order.user)
+	orders: Order[];
 }
