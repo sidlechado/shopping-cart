@@ -1,0 +1,28 @@
+language: node_js
+sudo: required
+dist: trusty
+
+services:
+  - docker
+install:
+  - npm ci
+stages:
+  - CI
+  - Deploy
+jobs:
+  include:
+    - stage: CI
+      name: Docker Image Build
+      workspaces:
+        create:
+          name: shared
+          paths: .
+      script:
+      - docker build --tag teste .
+      - docker images
+      env:
+      - NAME=Docker Image Build
+    - stage: test
+      workspaces:
+        use: shared
+      script: docker images
